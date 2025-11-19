@@ -11,6 +11,7 @@ import warnings
 import glob
 import sys
 import xarray as xr
+import numpy as np
 
 from .mapping_compat import Mapping
 from .regrid import regrid_to_1deg_ds
@@ -299,8 +300,12 @@ def realize_regrid_prepare(
         # Ensure the coordinate variable is also copied
         ds_vert = ds_vert.assign_coords(sdepth=ds_native["levgrnd"].values)
 
+    ds_1s = ds_vert.copy()
+    for var in names_to_regrid:
+        ds_1s[var].data = np.where(np.isfinite(ds_vert[var].data), 1, np.nan)
+
     ds_regr = regrid_to_1deg_ds(
-        ds_vert, names_to_regrid, time_from=ds_native, **regrid_kwargs
+        ds_1s, names_to_regrid, time_from=ds_native, **regrid_kwargs
     )
 
     if aux:
